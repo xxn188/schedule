@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="本周计划">
+<meta name="theme-color" content="#141414">
+<title>纹身师周计划</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  background: #141414; color: #E8E2D9;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  min-height: 100vh; -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* HEADER */
+.header { padding: 52px 22px 16px; border-bottom: 1px solid #222; display: flex; align-items: flex-end; justify-content: space-between; }
+.header-left .sub { font-size: 10px; letter-spacing: 4px; color: #555; margin-bottom: 4px; }
+.header-left .title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+.header-left .motto { font-size: 11px; color: #666; margin-top: 3px; }
+.edit-btn {
+  padding: 8px 16px; border-radius: 20px; border: 1.5px solid #333;
+  background: #1e1e1e; color: #999; font-size: 12px; letter-spacing: 1px;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap; margin-bottom: 2px;
+}
+.edit-btn.active { border-color: #C8A96E; background: #C8A96E18; color: #C8A96E; }
+.header-left.editable { cursor: pointer; position: relative; }
+.header-left.editable::after { content: "点击编辑"; position: absolute; bottom: -16px; left: 0; font-size: 9px; letter-spacing: 2px; color: #C8A96E; opacity: 0.6; }
+
+/* TABS */
+.day-tabs { display: flex; overflow-x: auto; padding: 12px 18px; gap: 8px; scrollbar-width: none; border-bottom: 1px solid #1e1e1e; -webkit-overflow-scrolling: touch; }
+.day-tabs::-webkit-scrollbar { display: none; }
+.tab { flex: 0 0 auto; padding: 8px 13px; border-radius: 12px; border: 1.5px solid #2a2a2a; background: #1a1a1a; cursor: pointer; text-align: center; min-width: 56px; transition: all 0.2s; }
+.tab.active { border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, transparent); }
+.tab.active .tab-en { color: var(--c); }
+.tab.active .tab-zh { color: #E8E2D9; font-weight: 600; }
+.tab-en { font-size: 9px; letter-spacing: 2px; color: #444; margin-bottom: 2px; }
+.tab-zh { font-size: 11px; color: #555; }
+.tab.is-today .tab-zh::after { content: "·"; color: #C8A96E; }
+
+/* CONTENT */
+.content { padding: 20px 20px 80px; }
+
+/* FOCUS BANNER */
+.focus-banner { border-radius: 16px; padding: 18px 20px; margin-bottom: 20px; position: relative; overflow: hidden; cursor: default; }
+.focus-banner.editable { cursor: pointer; }
+.focus-banner.editable::after { content: "点击编辑"; position: absolute; top: 12px; right: 14px; font-size: 9px; letter-spacing: 2px; color: var(--c); opacity: 0.7; }
+.focus-bg-emoji { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 50px; opacity: 0.12; pointer-events: none; }
+.focus-label { font-size: 10px; letter-spacing: 3px; margin-bottom: 3px; }
+.focus-title { font-size: 24px; font-weight: 700; margin-bottom: 7px; }
+.focus-desc { font-size: 12px; color: #888; line-height: 1.55; max-width: 84%; }
+
+/* TIME NOW */
+.time-now { font-size: 11px; color: #555; letter-spacing: 1px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.time-now .clock { font-size: 17px; font-weight: 600; color: #E8E2D9; }
+
+/* SECTION LABEL */
+.section-label { font-size: 10px; letter-spacing: 3px; color: #3a3a3a; margin-bottom: 10px; }
+
+/* BLOCKS */
+.blocks { display: flex; flex-direction: column; gap: 6px; }
+.block { display: flex; align-items: center; gap: 11px; padding: 11px 14px; border-radius: 10px; border: 1px solid transparent; transition: border-color 0.3s, background 0.3s, opacity 0.3s; }
+.block.now { border-color: var(--dot) !important; }
+.block.past { opacity: 0.35; }
+.dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.block-time { font-size: 11px; color: #444; min-width: 40px; letter-spacing: 0.3px; }
+.block-label { font-size: 13px; color: #D0CAC1; line-height: 1.4; flex: 1; }
+.now-tag { margin-left: auto; flex-shrink: 0; font-size: 9px; letter-spacing: 2px; padding: 2px 6px; border-radius: 20px; background: rgba(200,169,110,0.15); color: #C8A96E; display: none; }
+.block.now .now-tag { display: block; }
+
+/* EDIT MODE BLOCK */
+.block-edit-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #333; background: #1e1e1e; color: #666; font-size: 13px; cursor: pointer; display: none; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.block-edit-btn:active { background: #2a2a2a; }
+.block-del-btn { width: 28px; height: 28px; border-radius: 8px; border: 1px solid #3a2020; background: #1e1616; color: #C87B7B; font-size: 14px; cursor: pointer; display: none; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+.block-del-btn:active { background: #2a1a1a; }
+body.edit-mode .block-edit-btn,
+body.edit-mode .block-del-btn { display: flex; }
+body.edit-mode .now-tag { display: none !important; }
+
+/* ADD BLOCK BTN */
+.add-block-btn {
+  display: none; width: 100%; margin-top: 8px; padding: 11px;
+  border-radius: 10px; border: 1.5px dashed #2a2a2a; background: transparent;
+  color: #555; font-size: 13px; cursor: pointer; letter-spacing: 1px;
+  transition: all 0.2s;
+}
+.add-block-btn:active { border-color: #C8A96E; color: #C8A96E; }
+body.edit-mode .add-block-btn { display: block; }
+
+/* WEEK SUMMARY */
+.week-summary { margin-top: 26px; padding: 14px 16px; background: #1a1a1a; border-radius: 14px; border: 1px solid #222; }
+.week-row { display: flex; align-items: center; gap: 11px; padding: 8px 0; border-bottom: 1px solid #1e1e1e; cursor: pointer; }
+.week-row:last-child { border-bottom: none; }
+.week-bar { width: 3px; height: 28px; border-radius: 2px; flex-shrink: 0; background: #222; transition: background 0.2s; }
+.week-row.active .week-bar { background: var(--rc); }
+.week-zh { font-size: 11px; color: #444; min-width: 28px; }
+.week-focus { font-size: 13px; color: #666; }
+.week-row.active .week-focus { color: var(--rc); }
+
+/* RESET BTN */
+.reset-row { display: none; margin-top: 16px; }
+body.edit-mode .reset-row { display: flex; justify-content: center; }
+.reset-btn { padding: 8px 20px; border-radius: 20px; border: 1px solid #2a1a1a; background: transparent; color: #774; font-size: 11px; letter-spacing: 1px; cursor: pointer; }
+.reset-btn:active { background: #1e1616; }
+
+.footer { text-align: center; font-size: 10px; color: #252525; letter-spacing: 2px; margin-top: 20px; }
+
+/* OVERLAY */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s; backdrop-filter: blur(4px); }
+.overlay.show { opacity: 1; pointer-events: all; }
+
+/* BOTTOM SHEET */
+.sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 101;
+  background: #1c1c1c; border-radius: 20px 20px 0 0;
+  border-top: 1px solid #2a2a2a;
+  padding: 0 0 env(safe-area-inset-bottom, 16px);
+  transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+}
+.sheet.show { transform: translateY(0); }
+.sheet-handle { width: 36px; height: 4px; border-radius: 2px; background: #333; margin: 12px auto 0; }
+.sheet-title { padding: 16px 22px 6px; font-size: 14px; font-weight: 600; color: #999; letter-spacing: 1px; }
+.sheet-body { padding: 8px 20px 20px; }
+.field-label { font-size: 10px; letter-spacing: 2px; color: #555; margin-bottom: 6px; margin-top: 14px; }
+.field-label:first-child { margin-top: 0; }
+.field-input {
+  width: 100%; padding: 12px 14px; border-radius: 10px;
+  border: 1px solid #2a2a2a; background: #141414;
+  color: #E8E2D9; font-size: 14px; font-family: inherit;
+  outline: none; transition: border-color 0.2s;
+}
+.field-input:focus { border-color: #C8A96E; }
+.type-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+.type-pill {
+  padding: 6px 14px; border-radius: 20px; border: 1.5px solid #2a2a2a;
+  background: #141414; color: #666; font-size: 11px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+}
+.type-pill.selected { border-color: var(--pc); color: var(--pc); background: color-mix(in srgb, var(--pc) 12%, transparent); }
+.type-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pc); }
+.sheet-actions { display: flex; gap: 10px; margin-top: 18px; }
+.btn-cancel { flex: 1; padding: 13px; border-radius: 12px; border: 1px solid #2a2a2a; background: #141414; color: #666; font-size: 14px; cursor: pointer; }
+.btn-save { flex: 2; padding: 13px; border-radius: 12px; border: none; background: #C8A96E; color: #141414; font-size: 14px; font-weight: 600; cursor: pointer; }
+.btn-save:active { background: #b89050; }
+.btn-cancel:active { background: #1e1e1e; }
+
+/* FOCUS EDIT SHEET extras */
+.emoji-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.emoji-btn { width: 42px; height: 42px; border-radius: 10px; border: 1.5px solid #2a2a2a; background: #141414; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.emoji-btn.selected { border-color: #C8A96E; background: #C8A96E18; }
+</style>
+</head>
+<body>
+
+<!-- Header edit sheet -->
+<div class="sheet" id="headerSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">编辑顶部信息</div>
+  <div class="sheet-body">
+    <div class="field-label">小标题（顶部小字）</div>
+    <input class="field-input" id="editWeekLabel" placeholder="WEEK SCHEDULE" maxlength="40">
+    <div class="field-label">主标题</div>
+    <input class="field-input" id="editMainTitle" placeholder="纹身师的周计划" maxlength="20">
+    <div class="field-label">副标题</div>
+    <input class="field-input" id="editMotto" placeholder="专注一事，做到极致" maxlength="20">
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeSheet()">取消</button>
+      <button class="btn-save" onclick="saveHeader()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeSheet()"></div>
+
+<!-- Block edit sheet -->
+<div class="sheet" id="blockSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">编辑时间段</div>
+  <div class="sheet-body">
+    <div class="field-label">时间</div>
+    <input class="field-input" id="editTime" placeholder="09:00 或 下午 或 自由" maxlength="20">
+    <div class="field-label">内容</div>
+    <input class="field-input" id="editLabel" placeholder="这个时间段做什么">
+    <div class="field-label">颜色类型</div>
+    <div class="type-picker" id="typePicker"></div>
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeSheet()">取消</button>
+      <button class="btn-save" onclick="saveBlock()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Focus edit sheet -->
+<div class="sheet" id="focusSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">编辑当天主题</div>
+  <div class="sheet-body">
+    <div class="field-label">图标</div>
+    <div class="emoji-row" id="emojiPicker"></div>
+    <div class="field-label">主题名称</div>
+    <input class="field-input" id="editFocus" placeholder="画稿">
+    <div class="field-label">副标题（英文）</div>
+    <input class="field-input" id="editFocusEn" placeholder="DRAFTING" style="text-transform:uppercase" maxlength="20">
+    <div class="field-label">描述</div>
+    <input class="field-input" id="editDesc" placeholder="简短描述今天的主题">
+    <div class="sheet-actions">
+      <button class="btn-cancel" onclick="closeSheet()">取消</button>
+      <button class="btn-save" onclick="saveFocus()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="header">
+  <div class="header-left" id="headerLeft">
+    <div class="sub" id="weekLabel">WEEK SCHEDULE</div>
+    <div class="title" id="mainTitle">纹身师的周计划</div>
+    <div class="motto" id="mottoText">专注一事，做到极致</div>
+  </div>
+  <button class="edit-btn" id="editBtn" onclick="toggleEdit()">✏️ 编辑</button>
+</div>
+
+<div class="day-tabs" id="tabs"></div>
+<div class="content" id="content"></div>
+
+<script>
+const DEFAULTS = [
+  { day:"SUN", zhDay:"周日", focus:"休息", focusEn:"REST DAY", emoji:"🌿", color:"#8EA89E",
+    desc:"真正的休息，让大脑和双手完全放空，为下周充电",
+    blocks:[
+      {time:"懒觉",label:"睡到自然醒",type:"sleep"},
+      {time:"上午",label:"轻松活动：散步 / 拉伸 / 冥想",type:"rest"},
+      {time:"中午",label:"好好吃一顿",type:"rest"},
+      {time:"下午",label:"看电影 / 刷图 / 完全放松",type:"rest"},
+      {time:"18:00",label:"整理本周成果，规划下周",type:"wind"},
+      {time:"22:00",label:"早点睡，保证状态",type:"sleep"},
+    ]
+  },
+  { day:"MON", zhDay:"周一", focus:"画稿", focusEn:"DRAFTING", emoji:"✏️", color:"#C8A96E",
+    desc:"用一整天深入创作，把脑海里的图案全部落纸",
+    blocks:[
+      {time:"09:00",label:"起床 · 咖啡 · 热身速写",type:"warm"},
+      {time:"10:00",label:"深度画稿 · 主图创作",type:"focus"},
+      {time:"13:00",label:"午饭 + 散步 20 分钟",type:"rest"},
+      {time:"14:00",label:"继续画稿 · 细节打磨",type:"focus"},
+      {time:"18:30",label:"晚饭",type:"rest"},
+      {time:"20:00",label:"整理今日稿件 · 轻松翻书",type:"wind"},
+      {time:"23:00",label:"睡前放空，禁止屏幕",type:"sleep"},
+    ]
+  },
+  { day:"TUE", zhDay:"周二", focus:"上网课", focusEn:"LEARNING", emoji:"🎧", color:"#7B9EC8",
+    desc:"沉浸式学习日，一个课程从头听到尾，做笔记",
+    blocks:[
+      {time:"09:30",label:"起床 · 回顾昨日画稿",type:"warm"},
+      {time:"10:00",label:"网课学习 · 专注听讲",type:"focus"},
+      {time:"13:00",label:"午饭 + 小憩 30 分钟",type:"rest"},
+      {time:"14:00",label:"继续网课 · 整理笔记",type:"focus"},
+      {time:"17:30",label:"消化所学，自由练习",type:"wind"},
+      {time:"19:00",label:"晚饭 · 放松",type:"rest"},
+      {time:"21:00",label:"睡前轻度复习",type:"wind"},
+    ]
+  },
+  { day:"WED", zhDay:"周三", focus:"练习纹身", focusEn:"PRACTICE", emoji:"🔧", color:"#A8C89E",
+    desc:"上机练习日，在假皮或橘子上反复磨手感",
+    blocks:[
+      {time:"10:00",label:"起床 · 准备练习材料",type:"warm"},
+      {time:"10:30",label:"练习纹身 · 线条 / 填色",type:"focus"},
+      {time:"13:00",label:"午饭 · 看参考图放松眼睛",type:"rest"},
+      {time:"14:30",label:"继续练习 · 复杂图案",type:"focus"},
+      {time:"18:00",label:"清洁设备 · 拍照记录进度",type:"wind"},
+      {time:"19:00",label:"晚饭",type:"rest"},
+      {time:"21:00",label:"看纹身教程或作品库",type:"wind"},
+    ]
+  },
+  { day:"THU", zhDay:"周四", focus:"看书", focusEn:"READING", emoji:"📖", color:"#C89EB8",
+    desc:"深度阅读日，一本书从早读到晚，不被打扰",
+    blocks:[
+      {time:"09:00",label:"起床 · 泡茶 · 进入状态",type:"warm"},
+      {time:"09:30",label:"深度阅读 · 不开手机",type:"focus"},
+      {time:"12:30",label:"午饭 · 在脑子里消化内容",type:"rest"},
+      {time:"14:00",label:"继续阅读 · 随手做批注",type:"focus"},
+      {time:"17:30",label:"写读书笔记或思考草图",type:"wind"},
+      {time:"19:00",label:"晚饭 · 轻松休闲",type:"rest"},
+      {time:"21:00",label:"睡前再读半小时",type:"wind"},
+    ]
+  },
+  { day:"FRI", zhDay:"周五", focus:"纹身工作", focusEn:"TATTOO DAY", emoji:"⚡", color:"#C87B7B",
+    desc:"偶尔接单日 · 若无客户则改为画稿或自由创作",
+    blocks:[
+      {time:"09:30",label:"起床 · 准备工作台",type:"warm"},
+      {time:"10:00",label:"接待客户 / 确认设计方案",type:"focus"},
+      {time:"11:00",label:"开始纹身工作",type:"focus"},
+      {time:"13:30",label:"午饭 · 等客户愈合或休息",type:"rest"},
+      {time:"15:00",label:"继续工作 / 收尾",type:"focus"},
+      {time:"18:00",label:"清洁收拾 · 发布作品",type:"wind"},
+      {time:"20:00",label:"彻底放松",type:"rest"},
+    ]
+  },
+  { day:"SAT", zhDay:"周六", focus:"自由创作", focusEn:"FREE CREATE", emoji:"🎨", color:"#C8B47B",
+    desc:"随心所欲日，画稿、练习、网课任选，跟着感觉走",
+    blocks:[
+      {time:"自由",label:"随心起床，不设闹钟",type:"rest"},
+      {time:"随意",label:"想干什么就干什么",type:"focus"},
+      {time:"任意",label:"午饭可以外出换环境",type:"rest"},
+      {time:"下午",label:"继续创作或彻底摆烂",type:"focus"},
+      {time:"晚上",label:"出门逛逛 / 看展 / 社交",type:"wind"},
+    ]
+  },
+];
+
+const TYPE_META = {
+  warm:  { dot:"#C8A96E", bg:"#1e1c18", bgNow:"#282318", border:"#C8A96E22", label:"热身" },
+  focus: { dot:"#7B9EC8", bg:"#161c22", bgNow:"#1a2430", border:"#7B9EC822", label:"专注" },
+  rest:  { dot:"#C89EB8", bg:"#1a1620", bgNow:"#221c2a", border:"#C89EB822", label:"休息" },
+  wind:  { dot:"#A8C89E", bg:"#161e16", bgNow:"#1c2a1c", border:"#A8C89E22", label:"收尾" },
+  sleep: { dot:"#8EA89E", bg:"#181820", bgNow:"#1e1e2a", border:"#8EA89E22", label:"睡眠" },
+};
+
+const EMOJIS = ["✏️","🎧","🔧","📖","⚡","🎨","🌿","🖋️","🎯","💡","🌙","☀️","🔥","✦","🪡","🖼️","📐","🎵"];
+
+// ─── State ──────────────────────────────
+let data = loadData();
+let headerInfo = loadHeader();
+let selected = new Date().getDay();
+let editMode = false;
+let editingBlockIdx = null; // null = new block
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem('wk_schedule_v2');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULTS));
+}
+function loadHeader() {
+  try {
+    const saved = localStorage.getItem('wk_header_v2');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return { weekLabel: '', mainTitle: '纹身师的周计划', motto: '专注一事，做到极致' };
+}
+function save() {
+  localStorage.setItem('wk_schedule_v2', JSON.stringify(data));
+}
+function saveHeaderData() {
+  localStorage.setItem('wk_header_v2', JSON.stringify(headerInfo));
+}
+
+// ─── Time utils ─────────────────────────
+function parseMin(s) {
+  const m = (s||'').match(/^(\d{1,2}):(\d{2})$/);
+  return m ? parseInt(m[1])*60+parseInt(m[2]) : null;
+}
+function nowMin() { const n=new Date(); return n.getHours()*60+n.getMinutes(); }
+function clockStr() { const n=new Date(); return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`; }
+function weekLabel() {
+  const n=new Date(), s=new Date(n);
+  s.setDate(n.getDate()-n.getDay()+1);
+  const e=new Date(s); e.setDate(s.getDate()+6);
+  const f=d=>`${d.getMonth()+1}/${d.getDate()}`;
+  return `${n.getFullYear()} · ${f(s)} — ${f(e)}`;
+}
+
+// ─── Render ─────────────────────────────
+function render() {
+  const d = data[selected];
+  const todayIdx = new Date().getDay();
+  const nm = nowMin();
+  const times = d.blocks.map(b=>parseMin(b.time));
+  let nowBlk = -1;
+  if (selected===todayIdx) {
+    for(let i=times.length-1;i>=0;i--) { if(times[i]!==null && nm>=times[i]){nowBlk=i;break;} }
+  }
+
+  // Tabs
+  document.getElementById('tabs').innerHTML = data.map((s,i)=>`
+    <div class="tab ${i===selected?'active':''} ${i===todayIdx?'is-today':''}" style="--c:${s.color}" onclick="sel(${i})">
+      <div class="tab-en">${s.day}</div>
+      <div class="tab-zh">${s.zhDay}</div>
+    </div>`).join('');
+  setTimeout(()=>{
+    const t=document.querySelectorAll('.tab')[selected];
+    if(t) t.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  },40);
+
+  // Content
+  document.getElementById('content').innerHTML = `
+    <div class="focus-banner ${editMode?'editable':''}" style="background:${d.color}10;border:1px solid ${d.color}28;--c:${d.color}"
+      ${editMode?`onclick="openFocusSheet()"`:''}
+    >
+      <div class="focus-bg-emoji">${d.emoji}</div>
+      <div class="focus-label" style="color:${d.color}">${selected===todayIdx?'今天 · ':''}${d.focusEn}</div>
+      <div class="focus-title">${d.emoji} ${d.focus}</div>
+      <div class="focus-desc">${d.desc}</div>
+    </div>
+
+    ${selected===todayIdx?`<div class="time-now"><span class="clock" id="clock">${clockStr()}</span><span>现在</span></div>`:''}
+
+    <div class="section-label">今日节奏</div>
+    <div class="blocks">
+      ${d.blocks.map((b,i)=>{
+        const ts=TYPE_META[b.type]||TYPE_META.focus;
+        const isNow=i===nowBlk;
+        const isPast=selected===todayIdx&&times[i]!==null&&nm>(times[i]||0)&&!isNow;
+        return `<div class="block ${isNow?'now':''} ${isPast?'past':''}"
+          style="background:${isNow?ts.bgNow:ts.bg};border-color:${isNow?ts.dot:ts.border};--dot:${ts.dot}">
+          <div class="dot" style="background:${ts.dot}"></div>
+          <div class="block-time">${b.time}</div>
+          <div class="block-label">${b.label}</div>
+          <div class="now-tag">NOW</div>
+          <button class="block-edit-btn" onclick="openBlockSheet(${i},event)">✎</button>
+          <button class="block-del-btn" onclick="delBlock(${i},event)">×</button>
+        </div>`;
+      }).join('')}
+    </div>
+    <button class="add-block-btn" onclick="openBlockSheet(null)">+ 添加时间段</button>
+
+    <div class="week-summary">
+      <div class="section-label">本周全览</div>
+      ${data.map((s,i)=>`
+        <div class="week-row ${i===selected?'active':''}" style="--rc:${s.color}" onclick="sel(${i})">
+          <div class="week-bar"></div>
+          <div class="week-zh">${s.zhDay}</div>
+          <div class="week-focus">${s.emoji} ${s.focus}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="reset-row">
+      <button class="reset-btn" onclick="resetDay()">↺ 恢复这天的默认内容</button>
+    </div>
+    <div class="footer">ONE DAY · ONE THING · ALL IN</div>
+  `;
+
+  document.getElementById('weekLabel').textContent = headerInfo.weekLabel || weekLabel();
+  document.getElementById('mainTitle').textContent = headerInfo.mainTitle || '纹身师的周计划';
+  document.getElementById('mottoText').textContent = headerInfo.motto || '专注一事，做到极致';
+  document.getElementById('headerLeft').classList.toggle('editable', editMode);
+  document.getElementById('headerLeft').onclick = editMode ? openHeaderSheet : null;
+}
+
+function sel(i) { selected=i; render(); }
+function toggleEdit() {
+  editMode=!editMode;
+  document.body.classList.toggle('edit-mode', editMode);
+  document.getElementById('editBtn').classList.toggle('active', editMode);
+  document.getElementById('editBtn').textContent = editMode ? '✓ 完成' : '✏️ 编辑';
+  render();
+}
+
+// ─── Block Sheet ────────────────────────
+function openBlockSheet(idx, e) {
+  if(e) e.stopPropagation();
+  editingBlockIdx = idx;
+  const d = data[selected];
+  const b = idx!==null ? d.blocks[idx] : {time:'',label:'',type:'focus'};
+
+  document.getElementById('editTime').value = b.time||'';
+  document.getElementById('editLabel').value = b.label||'';
+
+  // Type picker
+  document.getElementById('typePicker').innerHTML = Object.entries(TYPE_META).map(([k,v])=>`
+    <div class="type-pill ${b.type===k?'selected':''}" style="--pc:${v.dot}" onclick="pickType('${k}',this)">
+      <div class="type-dot"></div>${v.label}
+    </div>`).join('');
+
+  showSheet('blockSheet');
+  setTimeout(()=>document.getElementById('editLabel').focus(),400);
+}
+function pickType(k, el) {
+  document.querySelectorAll('.type-pill').forEach(p=>p.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function saveBlock() {
+  const time = document.getElementById('editTime').value.trim();
+  const label = document.getElementById('editLabel').value.trim();
+  if(!label) return;
+  const selPill = document.querySelector('.type-pill.selected');
+  const type = selPill ? Object.keys(TYPE_META)[[...document.querySelectorAll('.type-pill')].indexOf(selPill)] : 'focus';
+  const d = data[selected];
+  if(editingBlockIdx!==null) {
+    d.blocks[editingBlockIdx] = {time,label,type};
+  } else {
+    d.blocks.push({time,label,type});
+  }
+  save(); closeSheet(); render();
+}
+function delBlock(idx, e) {
+  if(e) e.stopPropagation();
+  if(data[selected].blocks.length<=1) return;
+  data[selected].blocks.splice(idx,1);
+  save(); render();
+}
+
+// ─── Focus Sheet ────────────────────────
+function openFocusSheet() {
+  const d = data[selected];
+  document.getElementById('editFocus').value = d.focus||'';
+  document.getElementById('editFocusEn').value = d.focusEn||'';
+  document.getElementById('editDesc').value = d.desc||'';
+  document.getElementById('emojiPicker').innerHTML = EMOJIS.map(em=>`
+    <div class="emoji-btn ${d.emoji===em?'selected':''}" onclick="pickEmoji('${em}',this)">${em}</div>`).join('');
+  showSheet('focusSheet');
+}
+function pickEmoji(em, el) {
+  document.querySelectorAll('.emoji-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function saveFocus() {
+  const focus = document.getElementById('editFocus').value.trim();
+  const focusEn = document.getElementById('editFocusEn').value.trim().toUpperCase();
+  const desc = document.getElementById('editDesc').value.trim();
+  const selEmoji = document.querySelector('.emoji-btn.selected');
+  const emoji = selEmoji ? selEmoji.textContent : data[selected].emoji;
+  if(!focus) return;
+  Object.assign(data[selected], {focus,focusEn,desc,emoji});
+  save(); closeSheet(); render();
+}
+
+// ─── Header Sheet ───────────────────────
+function openHeaderSheet() {
+  document.getElementById('editWeekLabel').value = headerInfo.weekLabel || '';
+  document.getElementById('editMainTitle').value = headerInfo.mainTitle || '纹身师的周计划';
+  document.getElementById('editMotto').value = headerInfo.motto || '专注一事，做到极致';
+  showSheet('headerSheet');
+  setTimeout(()=>document.getElementById('editMainTitle').focus(), 400);
+}
+function saveHeader() {
+  const wl = document.getElementById('editWeekLabel').value.trim();
+  const mt = document.getElementById('editMainTitle').value.trim();
+  const mo = document.getElementById('editMotto').value.trim();
+  headerInfo = {
+    weekLabel: wl,
+    mainTitle: mt || '纹身师的周计划',
+    motto: mo || '专注一事，做到极致'
+  };
+  saveHeaderData(); closeSheet(); render();
+}
+
+// ─── Reset ──────────────────────────────
+function resetDay() {
+  if(!confirm('恢复这天的默认内容？你的修改会清除。')) return;
+  data[selected] = JSON.parse(JSON.stringify(DEFAULTS[selected]));
+  save(); render();
+}
+
+// ─── Sheet utils ────────────────────────
+function showSheet(id) {
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById(id).classList.add('show');
+}
+function closeSheet() {
+  document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('show'));
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ─── Clock tick ─────────────────────────
+setInterval(()=>{ const el=document.getElementById('clock'); if(el) el.textContent=clockStr(); }, 10000);
+setInterval(render, 60000);
+
+render();
+</script>
+</body>
+</html>
